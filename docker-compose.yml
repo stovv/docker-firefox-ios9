@@ -1,0 +1,16 @@
+version: '3.7'
+
+
+services:
+  browser:
+    build:
+      context: ./docker-firefox
+    volumes:
+      - ./config:/config
+    environment:
+      DISPLAY_WIDTH: 1024
+      DISPLAY_HEIGHT: 768
+      X11VNC_EXTRA_OPTS: -nocursor
+      VIEW_URL: https://google.com
+    ports:
+      - "5800:5800"
