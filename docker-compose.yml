@@ -4,13 +4,16 @@ version: '3.7'
 services:
   browser:
     build:
-      context: ./docker-firefox
+      context: .
+      args:
+        BUILDPLATFORM: linux/arm64
+        TARGETPLATFORM: linux/arm64
     volumes:
       - ./config:/config
     environment:
       DISPLAY_WIDTH: 1024
       DISPLAY_HEIGHT: 768
       X11VNC_EXTRA_OPTS: -nocursor
-      VIEW_URL: https://google.com
+      VIEW_URL: http://stovv-port.local:8123
     ports:
       - "5800:5800"

@@ -34,7 +34,7 @@ RUN apk --no-cache add build-base curl make cmake git && \
 FROM --platform=$BUILDPLATFORM alpine:3.15 AS cinit
 ARG TARGETPLATFORM
 COPY --from=xx / /
-COPY src/cinit /tmp/cinit
+COPY ./docker-baseimage/src/cinit /tmp/cinit
 RUN apk --no-cache add make clang
 RUN xx-apk --no-cache add gcc musl-dev
 RUN CC=xx-clang \
@@ -48,7 +48,7 @@ FROM --platform=$BUILDPLATFORM alpine:3.15 AS logmonitor
 ARG TARGETPLATFORM
 ARG TARGETARCH
 COPY --from=xx / /
-COPY src/logmonitor /tmp/logmonitor
+COPY ./docker-baseimage/src/logmonitor /tmp/logmonitor
 RUN apk --no-cache add make clang
 RUN xx-apk --no-cache add gcc musl-dev linux-headers
 RUN CC=xx-clang \
@@ -77,14 +77,21 @@ RUN upx /tmp/su-exec/su-exec
 FROM --platform=$BUILDPLATFORM alpine:3.15 AS logrotate
 ARG TARGETPLATFORM
 COPY --from=xx / /
-COPY src/logrotate /tmp/build
+COPY ./docker-baseimage/src/logrotate /tmp/build
 RUN /tmp/build/build.sh
 RUN xx-verify --static /tmp/logrotate-install/usr/sbin/logrotate
 COPY --from=upx /usr/bin/upx /usr/bin/upx
 RUN upx /tmp/logrotate-install/usr/sbin/logrotate
 
+FROM alpine:3.12 as membarrier_check
+WORKDIR /tmp
+COPY ./docker-firefox/membarrier_check.c .
+RUN apk --no-cache add build-base linux-headers
+RUN gcc -static -o membarrier_check membarrier_check.c
+RUN strip membarrier_check
+
 # Pull base image.
-FROM ${BASEIMAGE} as BASE
+FROM alpine:3.15
 ARG TARGETPLATFORM
 
 # Define working directory.
@@ -102,8 +109,10 @@ COPY --from=su-exec /tmp/su-exec/su-exec /opt/base/sbin/su-exec
 # Install logrotate.
 COPY --from=logrotate /tmp/logrotate-install/usr/sbin/logrotate /opt/base/sbin/
 
+COPY --from=membarrier_check /tmp/membarrier_check /usr/bin/
+
 # Copy helpers.
-COPY helpers/* /opt/base/bin/
+COPY ./docker-baseimage/helpers/* /opt/base/bin/
 
 # Install system packages.
 ARG ALPINE_PKGS
@@ -135,7 +144,7 @@ RUN \
     && true
 
 # Add files.
-COPY rootfs/ /
+COPY ./docker-baseimage/rootfs/ /
 
 # Set internal environment variables.
 RUN \

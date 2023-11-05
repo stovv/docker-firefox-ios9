@@ -1,4 +1,5 @@
-FROM ubuntu:latest
-LABEL authors="dstavrov"
+# syntax = edrevo/dockerfile-plus
 
-ENTRYPOINT ["top", "-b"]
+INCLUDE+ Dockerfile.base
+INCLUDE+ Dockerfile.gui
+INCLUDE+ Dockerfile.firefox
